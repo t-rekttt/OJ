@@ -509,7 +509,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('package', help='path to package in zip format')
         parser.add_argument('code', help='problem code')
-        parser.add_argument('--authors', help='VNOI username of author of the problem', nargs='+')
+        parser.add_argument('--authors', help='TLU AlgoSec username of author of the problem', nargs='+')
 
     def handle(self, *args, **options):
         # Force using English

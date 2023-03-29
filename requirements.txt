@@ -50,9 +50,9 @@ llist==0.7.1
 lupa==1.14.1
 lxml==4.9.2
 Markdown==3.4.1
-markdown2 @ git+https://github.com/VNOI-Admin/python-markdown2.git@a5673cae919fe2eb9ea47843c009bc56b01493cb
+markdown2 @ git+https://github.com/t-rekttt/python-markdown2.git@a5673cae919fe2eb9ea47843c009bc56b01493cb
 MarkupSafe==2.1.2
-martor @ git+https://github.com/VNOI-Admin/martor.git@eeca86c16e41ee0b635e3b6eaafd61130b976fcc
+martor @ git+https://github.com/t-rekttt/martor.git@eeca86c16e41ee0b635e3b6eaafd61130b976fcc
 mistune==0.8.4
 mysqlclient==2.1.1
 netaddr==0.8.0
