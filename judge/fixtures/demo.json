@@ -166,7 +166,7 @@
     },
     {
         "fields": {
-            "domain": "localhost:8081",
+            "domain": "oj.tlualgosec.com",
             "name": "TASOJ: TLU AlgoSec Online Judge"
         },
         "model": "sites.site",
