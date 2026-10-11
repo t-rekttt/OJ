@@ -101,7 +101,9 @@ class JudgeList(object):
     def on_judge_free(self, judge, submission):
         logger.info('Judge available after grading %d: %s', submission, judge.name)
         with self.lock:
-            del self.submission_map[submission]
+            # A judge whose connection dropped mid-grading is already forgotten (see `remove`); when it reconnects
+            # and reports the same submission again, the verdict must still be processed.
+            self.submission_map.pop(submission, None)
             judge._working = False
             self._handle_free_judge(judge)
 
