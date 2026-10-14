@@ -17,7 +17,8 @@ from judge import event_poster as event
 from judge.bridge.base_handler import ZlibPacketHandler, proxy_list
 from judge.caching import finished_submission
 from judge.models import Judge, Language, LanguageLimit, Problem, Profile, \
-    RuntimeVersion, Submission, SubmissionTestCase
+    RuntimeVersion, Submission, SubmissionQuality, SubmissionTestCase
+from judge.tasks.quality import score_submission_quality
 
 logger = logging.getLogger('judge.bridge')
 json_log = logging.getLogger('judge.json.bridge')
@@ -452,6 +453,20 @@ class JudgeHandler(ZlibPacketHandler):
             participation = submission.contest.participation
             event.post('contest_%d' % participation.contest_id, {'type': 'update'})
         self._post_update_submission(submission.id, 'grading-end', done=True)
+        # Last, so a slow broker can only delay this, never the verdict or the live update.
+        self._queue_code_quality(submission)
+
+    def _queue_code_quality(self, submission):
+        if not settings.CODE_QUALITY_JEV_API_KEY or submission.result != 'AC' or \
+                not SubmissionQuality.is_enabled_for(submission):
+            return
+        try:
+            # Fail fast: an unreachable broker must not hold up this judge's handler thread.
+            with score_submission_quality.app.connection_for_write(connect_timeout=1) as connection:
+                connection.ensure_connection(max_retries=1, timeout=1)
+                score_submission_quality.apply_async((submission.id,), connection=connection, retry=False)
+        except Exception:
+            logger.exception('Failed to queue code quality scoring for submission %d', submission.id)
 
     def on_compile_error(self, packet):
         logger.info('%s: Submission failed to compile: %s', self.name, packet['submission-id'])

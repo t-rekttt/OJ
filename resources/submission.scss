@@ -59,6 +59,14 @@
                 color: $color_primary100;
             }
         }
+
+        // Code quality is informational: smaller than the score. Dark blue stays readable (>= 4.5:1)
+        // on every result background (green AC, yellow partial, grey, orange).
+        .quality-score {
+            font-size: 0.7em;
+            color: #1a5276;
+            padding-top: 0.2em;
+        }
     }
 
     .sub-main {

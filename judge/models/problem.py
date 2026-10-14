@@ -224,6 +224,12 @@ class Problem(models.Model):
         default=False,
     )
 
+    enable_code_quality = models.BooleanField(
+        verbose_name=_('score code quality'),
+        help_text=_('Score the code quality of accepted submissions. Informational only; does not affect points.'),
+        default=False,
+    )
+
     __original_points = None
 
     def __init__(self, *args, **kwargs):

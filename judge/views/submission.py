@@ -24,7 +24,8 @@ from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import DetailView, ListView
 
 from judge.highlight_code import highlight_code
-from judge.models import Contest, Language, Organization, Problem, ProblemTranslation, Profile, Submission
+from judge.models import Contest, Language, Organization, Problem, ProblemTranslation, Profile, Submission, \
+    SubmissionQuality
 from judge.models.problem import ProblemTestcaseResultAccess, SubmissionSourceAccess
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.lazy import memo_lazy
@@ -42,6 +43,26 @@ def submission_related(queryset):
               'locked_after', 'problem__submission_source_visibility_mode', 'problem__testcase_result_visibility_mode',
               'user__username_display_override', 'user__display_badge__name', 'user__display_badge__mini') \
         .prefetch_related('contest_object__authors', 'contest_object__curators')
+
+
+def attach_quality(submissions, user):
+    """Set `quality_total` on each submission whose code-quality score `user` may see; one query per page."""
+    # A page holds many submissions of the same contest; decide each contest's visibility once.
+    contest_visible = {}
+
+    def is_visible(submission):
+        if submission.result != 'AC':
+            return False
+        if submission.contest_object_id not in contest_visible:
+            contest_visible[submission.contest_object_id] = SubmissionQuality.is_visible_to(submission, user)
+        return contest_visible[submission.contest_object_id]
+
+    visible = {submission.id: submission for submission in submissions if is_visible(submission)}
+    for submission in submissions:
+        submission.quality_total = None
+    for quality in SubmissionQuality.objects.filter(submission_id__in=visible):
+        visible[quality.submission_id].quality_total = quality.total
+    return submissions
 
 
 class SubmissionPermissionDenied(PermissionDenied):
@@ -271,6 +292,7 @@ class SubmissionStatus(SubmissionDetailBase):
 
         context['can_view_feedback'] = self.request.user.is_superuser or \
             submission.problem.allow_view_feedback
+        context['quality'] = self.get_quality(submission)
         context['time_limit'] = submission.problem.time_limit
         try:
             lang_limit = submission.problem.language_limits.get(language=submission.language)
@@ -279,6 +301,11 @@ class SubmissionStatus(SubmissionDetailBase):
         else:
             context['time_limit'] = lang_limit.time_limit
         return context
+
+    def get_quality(self, submission):
+        if not SubmissionQuality.is_visible_to(submission, self.request.user):
+            return None
+        return SubmissionQuality.objects.filter(submission=submission).first()
 
 
 class SubmissionTestCaseQuery(SubmissionStatus):
@@ -466,6 +493,7 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
         context['all_organizations'] = self.get_searchable_organizations()
         context['selected_organization'] = self.selected_organization
 
+        attach_quality(context['submissions'], self.request.user)
         context['results_json'] = mark_safe(json.dumps(self.get_result_data()))
         context['results_colors_json'] = mark_safe(json.dumps(settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS))
 
@@ -679,6 +707,7 @@ def single_submission(request):
     submission = get_object_or_404(submission_related(Submission.objects.all()), id=int(request.GET['id']))
     if not submission.problem.is_accessible_by(request.user):
         raise Http404()
+    attach_quality([submission], request.user)
 
     return render(request, 'submission/row.html', {
         'submission': submission,

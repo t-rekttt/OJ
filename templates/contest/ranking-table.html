@@ -65,6 +65,11 @@
             <div class="problem-code" style="display: none;">{{ problem.problem.code }}</div>
         </a></th>
     {% endfor %}
+    {% if show_quality %}
+        <th class="quality-total header" title="{{ _('Average code quality, out of 20. Informational only; does not affect points or ranking.') }}">
+            {{- pgettext('scoreboard column', 'Code quality') -}}
+        </th>
+    {% endif %}
     {% if has_rating %}
         <th class="rating-column">{{ _('Rating') }}</th>
     {% endif %}
@@ -80,6 +85,9 @@
     {% for cell in user.problem_cells %}
         {{ cell }}
     {% endfor %}
+    {% if show_quality %}
+        {{ user.quality_cell }}
+    {% endif %}
     {% if has_rating %}
         <td class="rating-column">{% if user.participation_rating %}{{ rating_number(user.participation_rating) }}{% endif %}</td>
     {% endif %}
@@ -95,6 +103,9 @@
         {% for problem in problems %}
             <td class="total-ac" id='{{- contest.get_label_for_problem(loop.index0) }}-total'>0</td>
         {% endfor %}
+        {% if show_quality %}
+            <td></td>
+        {% endif %}
         {% if has_rating %}
             <td></td>
         {% endif %}

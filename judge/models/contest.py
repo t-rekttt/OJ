@@ -140,6 +140,12 @@ class Contest(models.Model):
                                              help_text=_('Whether to show a section containing contest settings '
                                                          'on the contest page or not.'),
                                              default=False)
+    enable_code_quality = models.BooleanField(
+        verbose_name=_('score code quality'),
+        help_text=_('Score the code quality of accepted submissions made in this contest, overriding the '
+                    "problem's setting. Scores stay hidden until the contest ends. Does not affect points."),
+        default=False,
+    )
     is_organization_private = models.BooleanField(verbose_name=_('private to organizations'), default=False)
     organizations = models.ManyToManyField(Organization, blank=True, verbose_name=_('organizations'),
                                            help_text=_('If private, only these organizations may see the contest'))

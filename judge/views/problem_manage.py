@@ -13,7 +13,7 @@ from django.views.generic.detail import BaseDetailView
 
 from judge.forms import CompareSubmissionsForm
 from judge.models import Language, Submission
-from judge.tasks import apply_submission_filter, rejudge_problem_filter, rescore_problem
+from judge.tasks import apply_submission_filter, rejudge_problem_filter, rescore_problem, score_problem_quality
 from judge.utils.celery import redirect_to_task_status
 from judge.utils.views import TitleMixin
 from judge.views.problem import ProblemMixin
@@ -115,6 +115,20 @@ class RescoreAllSubmissionsView(ManageProblemSubmissionActionMixin, BaseDetailVi
         )
 
 
+class ScoreQualitySubmissionsView(PermissionRequiredMixin, ManageProblemSubmissionActionMixin, BaseDetailView):
+    # Bulk action that spends money and sends code off-site: same bar as bulk rejudge.
+    permission_required = 'judge.rejudge_submission_lot'
+
+    def perform_action(self):
+        if not self.object.enable_code_quality:
+            raise Http404()
+        status = score_problem_quality.delay(self.object.id)
+        return redirect_to_task_status(
+            status, message=_('Scoring code quality for %s...') % (self.object.name,),
+            redirect=reverse('problem_submissions_quality_success', args=[self.object.code, status.id]),
+        )
+
+
 def rejudge_success(request, problem, task_id):
     count = AsyncResult(task_id).result
     if not isinstance(count, int):
@@ -130,4 +144,13 @@ def rescore_success(request, problem, task_id):
         raise Http404()
     messages.success(request, ngettext('%d submission was successfully rescored.',
                                        '%d submissions were successfully rescored.', count) % (count,))
+    return HttpResponseRedirect(reverse('problem_manage_submissions', args=[problem]))
+
+
+def quality_success(request, problem, task_id):
+    count = AsyncResult(task_id).result
+    if not isinstance(count, int):
+        raise Http404()
+    messages.success(request, ngettext('Queued code quality scoring for %d submission.',
+                                       'Queued code quality scoring for %d submissions.', count) % (count,))
     return HttpResponseRedirect(reverse('problem_manage_submissions', args=[problem]))

@@ -1,0 +1,53 @@
+<br>
+<hr class="half-hr">
+<br>
+<style>
+    #code-quality { max-width: 32em; }
+    #code-quality h3 { margin-bottom: .2em; }
+    #code-quality .quality-note { color: gray; font-size: .9em; margin: 0 0 .8em; }
+    #code-quality table { width: 100%; border-collapse: collapse; }
+    #code-quality td { padding: 3px 6px 3px 0; vertical-align: middle; }
+    #code-quality td.quality-label { width: 7em; white-space: nowrap; }
+    #code-quality td.quality-value { width: 4.5em; text-align: right; font-weight: bold; white-space: nowrap; }
+    #code-quality .quality-bar { background: #eee; border-radius: 4px; height: .8em; overflow: hidden; }
+    #code-quality .quality-bar span { display: block; height: 100%; background: #2980b9; }
+    #code-quality tr.quality-uncertain .quality-bar span { background: #aaa; }
+    #code-quality tr.quality-total td { border-top: 1px solid #ddd; padding-top: 6px; }
+    #code-quality .quality-legend { color: gray; font-size: .85em; margin-top: .4em; }
+</style>
+{% set labels = {
+    'naming': _('Naming'),
+    'structure': _('Structure'),
+    'clarity': _('Clarity'),
+    'hygiene': _('Hygiene'),
+} %}
+{% set hints = {
+    'naming': _('Do identifiers describe their purpose?'),
+    'structure': _('Is the code decomposed sensibly for its size?'),
+    'clarity': _('Is the code easy to read and follow?'),
+    'hygiene': _('Is the code free of dead code, unused declarations and magic numbers?'),
+} %}
+<div id="code-quality">
+    <h3>{{ _('Code quality') }}</h3>
+    <p class="quality-note">{{ _('Scored automatically from 1 to 5. Informational only: it does not affect points or ranking.') }}</p>
+    <table>
+        {% for dim in quality.DIMENSIONS %}
+            {% set value = quality[dim] %}
+            {% set uncertain = quality.confidence.get(dim, 1) < 0.4 %}
+            <tr class="quality-row{% if uncertain %} quality-uncertain{% endif %}"
+                title="{{ hints[dim] }}{% if uncertain %} ({{ _('low confidence') }}){% endif %}">
+                <td class="quality-label">{{ labels[dim] }}</td>
+                <td><div class="quality-bar"><span style="width: {{ ((value - 1) / 4 * 100)|round(1) }}%"></span></div></td>
+                <td class="quality-value">{{ value|round(1) }}</td>
+            </tr>
+        {% endfor %}
+        <tr class="quality-total">
+            <td class="quality-label">{{ _('Total') }}</td>
+            <td></td>
+            <td class="quality-value">{{ quality.total|round(1) }} / 20</td>
+        </tr>
+    </table>
+    {% if quality.confidence.values()|select('lt', 0.4)|list %}
+        <p class="quality-legend">{{ _('Grey bars: the scorer was not confident about this score.') }}</p>
+    {% endif %}
+</div>

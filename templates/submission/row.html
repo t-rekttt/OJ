@@ -11,6 +11,11 @@
             <i class="fa fa-spinner fa-pulse grading-spinner"></i>
         {%- endif -%}
     </div>
+    {% if submission.quality_total is not none %}
+        <div class="quality-score" title="{{ _('Code quality (informational, does not affect points)') }}">
+            {{- pgettext('code quality abbreviation', 'CQ') }} {{ '%.1f'|format(submission.quality_total) -}}
+        </div>
+    {% endif %}
 
     <div class="state">
         <span title="{{ submission.long_status }}" class="status">{{ submission.short_status }}</span> |

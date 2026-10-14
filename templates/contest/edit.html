@@ -141,5 +141,14 @@
             {% endif %}
         </button></div>
     </form>
+    {% if object and object.enable_code_quality %}
+        <form action="{{ url('contest_score_quality', object.key) }}" method="post" class="form-area"
+              style="margin-top: 1em;">
+            {% csrf_token %}
+            <h3>{{ _('Code Quality') }}</h3>
+            <p>{{ _('Score the code quality of all accepted submissions in this contest that are not scored yet.') }}</p>
+            <button type="submit" class="button">{{ _('Score accepted submissions') }}</button>
+        </form>
+    {% endif %}
 </div>
 {% endblock %}
