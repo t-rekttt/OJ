@@ -189,6 +189,17 @@
             </form>
         </div>
 
+        {% if problem.enable_code_quality and perms.judge.rejudge_submission_lot %}
+            <div class="pane">
+                <h3>{{ _('Code Quality') }}</h3>
+                <p>{{ _('Score the code quality of all accepted submissions that are not scored yet.') }}</p>
+                <form action="{{ url('problem_submissions_quality', problem.code) }}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="unselectable button full">{{ _('Score accepted submissions') }}</button>
+                </form>
+            </div>
+        {% endif %}
+
         <div class="pane">
             <h3>{{ _('Compare Submissions') }}</h3>
             <div class="control-group">

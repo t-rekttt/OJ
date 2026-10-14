@@ -151,6 +151,10 @@ urlpatterns = [
                  name='problem_submissions_rescore_all'),
             path('/rescore/success/<slug:task_id>', problem_manage.rescore_success,
                  name='problem_submissions_rescore_success'),
+            path('/quality', problem_manage.ScoreQualitySubmissionsView.as_view(),
+                 name='problem_submissions_quality'),
+            path('/quality/success/<slug:task_id>', problem_manage.quality_success,
+                 name='problem_submissions_quality_success'),
         ])),
     ])),
 

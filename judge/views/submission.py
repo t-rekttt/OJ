@@ -24,7 +24,8 @@ from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import DetailView, ListView
 
 from judge.highlight_code import highlight_code
-from judge.models import Contest, Language, Organization, Problem, ProblemTranslation, Profile, Submission
+from judge.models import Contest, Language, Organization, Problem, ProblemTranslation, Profile, Submission, \
+    SubmissionQuality
 from judge.models.problem import ProblemTestcaseResultAccess, SubmissionSourceAccess
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.lazy import memo_lazy
@@ -271,6 +272,9 @@ class SubmissionStatus(SubmissionDetailBase):
 
         context['can_view_feedback'] = self.request.user.is_superuser or \
             submission.problem.allow_view_feedback
+        # Scores belong to accepted code; a rejudge to a different verdict hides them until it is AC again.
+        context['quality'] = SubmissionQuality.objects.filter(submission=submission).first() \
+            if submission.result == 'AC' else None
         context['time_limit'] = submission.problem.time_limit
         try:
             lang_limit = submission.problem.language_limits.get(language=submission.language)

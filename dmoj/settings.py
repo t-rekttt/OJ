@@ -711,6 +711,15 @@ SOCIAL_AUTH_SLUGIFY_FUNCTION = 'judge.social_auth.slugify_username'
 
 MOSS_API_KEY = None
 
+# Code-quality scoring of accepted submissions (TypeSafe Jev). Disabled while the API key is unset.
+CODE_QUALITY_JEV_URL = 'https://api.typesafe.ai'
+CODE_QUALITY_JEV_API_KEY = None
+CODE_QUALITY_JEV_MODEL = 'jev-1.13'
+CODE_QUALITY_JEV_TIMEOUT = 15
+CODE_QUALITY_MAX_SOURCE_BYTES = 20000
+# Soft monthly spend cap in USD; None disables the cap.
+CODE_QUALITY_MONTHLY_BUDGET_USD = 20
+
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 
 WEBAUTHN_RP_ID = None

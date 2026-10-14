@@ -10,6 +10,7 @@ from judge.models.problem import LanguageLimit, License, Problem, ProblemClarifi
 from judge.models.problem_data import CHECKERS, ProblemData, ProblemTestCase, problem_data_storage, \
     problem_directory_file
 from judge.models.profile import Badge, Organization, OrganizationRequest, Profile, WebAuthnCredential
+from judge.models.quality import SubmissionQuality
 from judge.models.runtime import Judge, Language, RuntimeVersion
 from judge.models.submission import SUBMISSION_RESULT, Submission, SubmissionSource, SubmissionTestCase
 from judge.models.tag import Tag, TagData, TagGroup, TagProblem
