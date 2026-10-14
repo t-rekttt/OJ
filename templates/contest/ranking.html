@@ -18,6 +18,18 @@
             display: none;
         }
 
+        /* Code quality is informational: keep it visually secondary to points. */
+        #ranking-table .quality-score {
+            font-size: 0.75em;
+            color: #2980b9;
+            font-weight: normal;
+        }
+
+        #ranking-table td.quality-total, #ranking-table th.quality-total {
+            color: #2980b9;
+            white-space: nowrap;
+        }
+
         .select2-selection__rendered {
             cursor: text;
             overflow: initial !important
@@ -520,8 +532,8 @@
                             row_data.push(clean_text($col.find('.rating').first().text()));
                             row_data.push(clean_text($col.find('.personal-info').first().text()));
                         } else {
-                            // Point or rank
-                            row_data.push(clean_text($col.ignore('.solving-time').text()));
+                            // Point or rank; the code-quality badge is shown on screen only, not exported in points
+                            row_data.push(clean_text($col.ignore('.solving-time').ignore('.quality-score').text()));
                         }
                     });
                     csv.push(row_data.join(','));

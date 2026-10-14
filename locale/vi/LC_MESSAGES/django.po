@@ -7674,3 +7674,24 @@ msgstr "Chấm chất lượng mã cho mọi bài nộp được chấp nhận t
 #: templates/problem/manage_submission.html
 msgid "Score the code quality of accepted practice submissions that are not scored yet. Contest submissions follow their contest setting."
 msgstr "Chấm chất lượng mã cho các bài nộp luyện tập được chấp nhận chưa được chấm. Bài nộp trong kỳ thi theo thiết lập của kỳ thi."
+
+#: judge/utils/quality_ranking.py
+msgid "Code quality (informational, does not affect points)"
+msgstr "Chất lượng mã (chỉ để tham khảo, không ảnh hưởng đến điểm)"
+
+#: judge/utils/quality_ranking.py
+msgid "Q"
+msgstr "CL"
+
+#: judge/utils/quality_ranking.py
+#, python-format
+msgid "Average code quality over %(count)d problem(s), out of 20"
+msgstr "Chất lượng mã trung bình trên %(count)d bài, thang điểm 20"
+
+#: templates/contest/ranking-table.html
+msgid "Average code quality, out of 20. Informational only; does not affect points or ranking."
+msgstr "Chất lượng mã trung bình, thang điểm 20. Chỉ để tham khảo; không ảnh hưởng đến điểm hay xếp hạng."
+
+#: templates/contest/ranking-table.html
+msgid "Quality"
+msgstr "Chất lượng"

@@ -45,6 +45,8 @@ from judge.utils.celery import redirect_to_task_status, task_status_by_id, task_
 from judge.utils.cms import parse_csv_ranking
 from judge.utils.opengraph import generate_opengraph
 from judge.utils.problems import _get_result_data, user_attempted_ids, user_completed_ids
+from judge.utils.quality_ranking import add_quality_to_cell, can_see_quality_column, latest_accepted_quality, \
+    quality_total_cell
 from judge.utils.ranker import ranker
 from judge.utils.stats import get_bar_chart, get_pie_chart, get_stacked_bar_chart
 from judge.utils.views import DiggPaginatorMixin, QueryStringSortMixin, SingleObjectFormView, TitleMixin, \
@@ -722,7 +724,8 @@ class ContestStats(TitleMixin, ContestMixin, DetailView):
 ContestRankingProfile = namedtuple(
     'ContestRankingProfile',
     'id user css_class username points cumtime tiebreaker organization participation '
-    'participation_rating problem_cells result_cell virtual display_name',
+    'participation_rating problem_cells result_cell virtual display_name quality_cell',
+    defaults=(None,),
 )
 
 BestSolutionData = namedtuple('BestSolutionData', 'code points time state is_pretested')
@@ -810,8 +813,27 @@ class ContestRankingBase(ContestMixin, TitleMixin, DetailView):
         if not self.object.can_see_own_scoreboard(self.request.user):
             raise Http404()
 
+    # Rankings built from live participations can show code quality; the official CSV ranking cannot.
+    shows_code_quality = True
+
+    def add_code_quality(self, users, problems):
+        """Append each contestant's latest accepted code-quality score to their problem cells and a total column."""
+        users = list(users)
+        scores = latest_accepted_quality(self.object, [user.participation.id for _rank, user in users])
+        ranked = []
+        for rank, user in users:
+            totals = [scores.get((user.participation.id, problem.id)) for problem in problems]
+            ranked.append((rank, user._replace(
+                problem_cells=[add_quality_to_cell(cell, total) for cell, total in zip(user.problem_cells, totals)],
+                quality_cell=quality_total_cell([total for total in totals if total is not None]),
+            )))
+        return ranked
+
     def get_rendered_ranking_table(self):
         users, problems = self.get_ranking_list()
+        show_quality = self.shows_code_quality and can_see_quality_column(self.object, self.request.user)
+        if show_quality:
+            users = self.add_code_quality(users, problems)
 
         return loader.render_to_string(self.ranking_table_template_name, request=self.request, context={
             'table_id': 'ranking-table',
@@ -823,6 +845,7 @@ class ContestRankingBase(ContestMixin, TitleMixin, DetailView):
             'perms': PermWrapper(self.request.user),
             'can_edit': self.can_edit,
             'is_ICPC_format': (self.object.format.name == ICPCContestFormat.name),
+            'show_quality': show_quality,
         })
 
     def get_context_data(self, **kwargs):
@@ -942,6 +965,7 @@ class ContestOfficialRanking(ContestRankingBase):
     template_name = 'contest/official-ranking.html'
     ranking_table_template_name = 'contest/official-ranking-table.html'
     tab = 'official_ranking'
+    shows_code_quality = False
 
     def get_title(self):
         return _('%s Official Rankings') % self.object.name
