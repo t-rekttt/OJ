@@ -272,9 +272,7 @@ class SubmissionStatus(SubmissionDetailBase):
 
         context['can_view_feedback'] = self.request.user.is_superuser or \
             submission.problem.allow_view_feedback
-        # Scores belong to accepted code; a rejudge to a different verdict hides them until it is AC again.
-        context['quality'] = SubmissionQuality.objects.filter(submission=submission).first() \
-            if submission.result == 'AC' else None
+        context['quality'] = self.get_quality(submission)
         context['time_limit'] = submission.problem.time_limit
         try:
             lang_limit = submission.problem.language_limits.get(language=submission.language)
@@ -283,6 +281,16 @@ class SubmissionStatus(SubmissionDetailBase):
         else:
             context['time_limit'] = lang_limit.time_limit
         return context
+
+    def get_quality(self, submission):
+        # Scores belong to accepted code; a rejudge to a different verdict hides them until it is AC again.
+        if submission.result != 'AC':
+            return None
+        # Like checker feedback, scores stay hidden while the contest runs so they don't distract contestants.
+        contest = submission.contest_object
+        if contest is not None and not contest.ended and not contest.is_editable_by(self.request.user):
+            return None
+        return SubmissionQuality.objects.filter(submission=submission).first()
 
 
 class SubmissionTestCaseQuery(SubmissionStatus):

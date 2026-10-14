@@ -40,7 +40,7 @@ from judge.forms import ContestAnnouncementForm, ContestCloneForm, ContestDownlo
     ProposeContestProblemFormSet
 from judge.models import Contest, ContestAnnouncement, ContestMoss, ContestParticipation, ContestProblem, ContestTag, \
     Organization, Problem, ProblemClarification, Profile, Submission
-from judge.tasks import on_new_contest, prepare_contest_data, run_moss
+from judge.tasks import on_new_contest, prepare_contest_data, run_moss, score_contest_quality
 from judge.utils.celery import redirect_to_task_status, task_status_by_id, task_status_url_by_id
 from judge.utils.cms import parse_csv_ranking
 from judge.utils.opengraph import generate_opengraph
@@ -1081,6 +1081,26 @@ class ContestMossView(ContestMossMixin, TitleMixin, DetailView):
         return redirect_to_task_status(
             status, message=_('Running MOSS for %s...') % (self.object.name,),
             redirect=reverse('contest_moss', args=(self.object.key,)),
+        )
+
+
+class ContestScoreQuality(ContestMixin, SingleObjectMixin, View):
+    """Queue code-quality scoring for the contest's accepted submissions that have no score yet."""
+
+    def get_object(self, queryset=None):
+        contest = super().get_object(queryset)
+        if not contest.is_editable_by(self.request.user):
+            raise PermissionDenied()
+        if not contest.enable_code_quality:
+            raise Http404()
+        return contest
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        status = score_contest_quality.delay(self.object.id)
+        return redirect_to_task_status(
+            status, message=_('Scoring code quality for %s...') % (self.object.name,),
+            redirect=reverse('contest_edit', args=(self.object.key,)),
         )
 
 

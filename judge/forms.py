@@ -682,6 +682,7 @@ class ContestForm(ModelForm):
             'use_clarifications',
             'hide_problem_tags',
             'hide_problem_authors',
+            'enable_code_quality',
             'scoreboard_visibility',
             'description',
             'is_private',

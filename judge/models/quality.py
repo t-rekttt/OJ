@@ -28,6 +28,13 @@ class SubmissionQuality(models.Model):
         verbose_name = _('submission code quality')
         verbose_name_plural = _('submission code qualities')
 
+    @staticmethod
+    def is_enabled_for(submission):
+        """Contest submissions follow the contest's switch; practice submissions follow the problem's."""
+        if submission.contest_object_id is not None:
+            return submission.contest_object.enable_code_quality
+        return submission.problem.enable_code_quality
+
     @property
     def total(self):
         return sum(getattr(self, dim) for dim in self.DIMENSIONS)

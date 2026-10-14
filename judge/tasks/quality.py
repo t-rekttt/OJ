@@ -9,7 +9,7 @@ from judge.models import Submission, SubmissionQuality
 from judge.utils.celery import Progress
 from judge.utils.code_quality import CodeQualityError, RUBRIC_VERSION, score_source, source_hash
 
-__all__ = ('score_problem_quality', 'score_submission_quality')
+__all__ = ('score_contest_quality', 'score_problem_quality', 'score_submission_quality')
 
 logger = logging.getLogger('judge.code_quality')
 
@@ -47,10 +47,11 @@ def score_submission_quality(self, submission_id):
     if not settings.CODE_QUALITY_JEV_API_KEY:
         return 'disabled'
     try:
-        submission = Submission.objects.select_related('source', 'language', 'problem').get(id=submission_id)
+        submission = Submission.objects.select_related('source', 'language', 'problem', 'contest_object') \
+                                       .get(id=submission_id)
     except Submission.DoesNotExist:
         return 'missing'
-    if not submission.problem.enable_code_quality:
+    if not SubmissionQuality.is_enabled_for(submission):
         return 'not-enabled'
     if submission.result != 'AC':
         return 'not-accepted'
@@ -93,16 +94,26 @@ def score_submission_quality(self, submission_id):
     return 'scored'
 
 
-@shared_task(bind=True)
-def score_problem_quality(self, problem_id):
-    """Queue code-quality scoring for every accepted submission of a problem (backfill)."""
-    submission_ids = Submission.objects.filter(problem_id=problem_id, result='AC') \
-                                       .exclude(quality__rubric_version=RUBRIC_VERSION).values_list('id', flat=True)
+def _queue_unscored(task, submissions):
+    submission_ids = submissions.filter(result='AC').exclude(quality__rubric_version=RUBRIC_VERSION) \
+                                .values_list('id', flat=True)
     queued = 0
-    with Progress(self, submission_ids.count()) as p:
+    with Progress(task, submission_ids.count()) as p:
         for submission_id in submission_ids.iterator():
             score_submission_quality.delay(submission_id)
             queued += 1
             if queued % 10 == 0:
                 p.done = queued
     return queued
+
+
+@shared_task(bind=True)
+def score_problem_quality(self, problem_id):
+    """Backfill a problem's practice submissions; contest submissions follow their contest's setting."""
+    return _queue_unscored(self, Submission.objects.filter(problem_id=problem_id, contest_object__isnull=True))
+
+
+@shared_task(bind=True)
+def score_contest_quality(self, contest_id):
+    """Backfill every accepted submission made in a contest."""
+    return _queue_unscored(self, Submission.objects.filter(contest_object_id=contest_id))

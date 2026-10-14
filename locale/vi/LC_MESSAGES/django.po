@@ -7608,10 +7608,6 @@ msgid "Code Quality"
 msgstr "Chất lượng mã"
 
 #: templates/problem/manage_submission.html
-msgid "Score the code quality of all accepted submissions that are not scored yet."
-msgstr "Chấm chất lượng mã cho mọi bài nộp được chấp nhận chưa được chấm."
-
-#: templates/problem/manage_submission.html
 msgid "Score accepted submissions"
 msgstr "Chấm các bài nộp được chấp nhận"
 
@@ -7666,3 +7662,15 @@ msgstr "độ tin cậy thấp"
 #: templates/submission/quality.html
 msgid "Grey bars: the scorer was not confident about this score."
 msgstr "Thanh màu xám: hệ thống chấm chưa chắc chắn về điểm này."
+
+#: judge/models/contest.py
+msgid "Score the code quality of accepted submissions made in this contest, overriding the problem's setting. Scores stay hidden until the contest ends. Does not affect points."
+msgstr "Chấm chất lượng mã của các bài nộp được chấp nhận trong kỳ thi này, ghi đè thiết lập của bài. Điểm được ẩn cho đến khi kỳ thi kết thúc. Không ảnh hưởng đến điểm số."
+
+#: templates/contest/edit.html
+msgid "Score the code quality of all accepted submissions in this contest that are not scored yet."
+msgstr "Chấm chất lượng mã cho mọi bài nộp được chấp nhận trong kỳ thi này chưa được chấm."
+
+#: templates/problem/manage_submission.html
+msgid "Score the code quality of accepted practice submissions that are not scored yet. Contest submissions follow their contest setting."
+msgstr "Chấm chất lượng mã cho các bài nộp luyện tập được chấp nhận chưa được chấm. Bài nộp trong kỳ thi theo thiết lập của kỳ thi."

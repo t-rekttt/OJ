@@ -17,7 +17,7 @@ from judge import event_poster as event
 from judge.bridge.base_handler import ZlibPacketHandler, proxy_list
 from judge.caching import finished_submission
 from judge.models import Judge, Language, LanguageLimit, Problem, Profile, \
-    RuntimeVersion, Submission, SubmissionTestCase
+    RuntimeVersion, Submission, SubmissionQuality, SubmissionTestCase
 from judge.tasks.quality import score_submission_quality
 
 logger = logging.getLogger('judge.bridge')
@@ -458,7 +458,7 @@ class JudgeHandler(ZlibPacketHandler):
 
     def _queue_code_quality(self, submission):
         if not settings.CODE_QUALITY_JEV_API_KEY or submission.result != 'AC' or \
-                not submission.problem.enable_code_quality:
+                not SubmissionQuality.is_enabled_for(submission):
             return
         try:
             # Fail fast: an unreachable broker must not hold up this judge's handler thread.
