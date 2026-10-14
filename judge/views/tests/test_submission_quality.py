@@ -65,7 +65,7 @@ class SubmissionQualityViewTestCase(TestCase):
         self.add_quality()
         self.client.force_login(self.owner)
         response = self.client.get(reverse('submission_status', args=[self.submission.id]), HTTP_ACCEPT_LANGUAGE='vi')
-        self.assertContains(response, 'Chất lượng mã')
+        self.assertContains(response, 'Chất lượng code')
         self.assertContains(response, 'Đặt tên')
 
 

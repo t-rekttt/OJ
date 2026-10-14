@@ -7586,26 +7586,26 @@ msgstr "Chọn tất cả"
 
 #: judge/models/problem.py
 msgid "score code quality"
-msgstr "chấm chất lượng mã"
+msgstr "chấm chất lượng code"
 
 #: judge/models/problem.py
 msgid "Score the code quality of accepted submissions. Informational only; does not affect points."
-msgstr "Chấm chất lượng mã của các bài nộp được chấp nhận. Chỉ để tham khảo, không ảnh hưởng đến điểm."
+msgstr "Chấm chất lượng code của các bài nộp được chấp nhận. Chỉ để tham khảo, không ảnh hưởng đến điểm."
 
 #: judge/views/problem_manage.py
 #, python-format
 msgid "Scoring code quality for %s..."
-msgstr "Đang chấm chất lượng mã cho %s..."
+msgstr "Đang chấm chất lượng code cho %s..."
 
 #: judge/views/problem_manage.py
 #, python-format
 msgid "Queued code quality scoring for %d submission."
 msgid_plural "Queued code quality scoring for %d submissions."
-msgstr[0] "Đã xếp lịch chấm chất lượng mã cho %d bài nộp."
+msgstr[0] "Đã xếp lịch chấm chất lượng code cho %d bài nộp."
 
 #: templates/problem/manage_submission.html
 msgid "Code Quality"
-msgstr "Chất lượng mã"
+msgstr "Chất lượng code"
 
 #: templates/problem/manage_submission.html
 msgid "Score accepted submissions"
@@ -7613,7 +7613,7 @@ msgstr "Chấm các bài nộp được chấp nhận"
 
 #: templates/submission/quality.html
 msgid "Code quality"
-msgstr "Chất lượng mã"
+msgstr "Chất lượng code"
 
 #: templates/submission/quality.html
 msgid "Scored automatically from 1 to 5. Informational only: it does not affect points or ranking."
@@ -7665,15 +7665,15 @@ msgstr "Thanh màu xám: hệ thống chấm chưa chắc chắn về điểm n�
 
 #: judge/models/contest.py
 msgid "Score the code quality of accepted submissions made in this contest, overriding the problem's setting. Scores stay hidden until the contest ends. Does not affect points."
-msgstr "Chấm chất lượng mã của các bài nộp được chấp nhận trong kỳ thi này, ghi đè thiết lập của bài. Điểm được ẩn cho đến khi kỳ thi kết thúc. Không ảnh hưởng đến điểm số."
+msgstr "Chấm chất lượng code của các bài nộp được chấp nhận trong kỳ thi này, ghi đè thiết lập của bài. Điểm được ẩn cho đến khi kỳ thi kết thúc. Không ảnh hưởng đến điểm số."
 
 #: templates/contest/edit.html
 msgid "Score the code quality of all accepted submissions in this contest that are not scored yet."
-msgstr "Chấm chất lượng mã cho mọi bài nộp được chấp nhận trong kỳ thi này chưa được chấm."
+msgstr "Chấm chất lượng code cho mọi bài nộp được chấp nhận trong kỳ thi này chưa được chấm."
 
 #: templates/problem/manage_submission.html
 msgid "Score the code quality of accepted practice submissions that are not scored yet. Contest submissions follow their contest setting."
-msgstr "Chấm chất lượng mã cho các bài nộp luyện tập được chấp nhận chưa được chấm. Bài nộp trong kỳ thi theo thiết lập của kỳ thi."
+msgstr "Chấm chất lượng code cho các bài nộp luyện tập được chấp nhận chưa được chấm. Bài nộp trong kỳ thi theo thiết lập của kỳ thi."
 
 #: judge/utils/quality_ranking.py
 msgid "Code quality (informational, does not affect points)"
