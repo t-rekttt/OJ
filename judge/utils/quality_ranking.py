@@ -41,9 +41,10 @@ def add_quality_to_cell(cell, total):
     """Insert the quality score just before the format's closing </td>; leave the cell untouched if absent."""
     if total is None or not cell.endswith('</td>'):
         return cell
-    badge = format_html('<div class="quality-score" title="{title}">{label}: {total}</div>',
+    # Short label to fit the cell; the column header and the tooltip spell out "Code quality".
+    badge = format_html('<div class="quality-score" title="{title}">{label} {total}</div>',
                         title=_('Code quality (informational, does not affect points)'),
-                        label=pgettext('scoreboard column', 'Code quality'), total='%.1f' % total)
+                        label=pgettext('code quality abbreviation', 'CQ'), total='%.1f' % total)
     return mark_safe(cell[:-len('</td>')] + badge + '</td>')
 
 

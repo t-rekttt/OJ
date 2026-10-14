@@ -83,11 +83,20 @@ class ContestRankingQualityTestCase(TestCase):
                 alice = self.row(html, 'rq_alice')
                 self.assertIn('class="quality-score"', alice)
                 self.assertIn('16.0', alice)
-                self.assertIn('Code quality: 16.0', alice)
+                self.assertIn('CQ 16.0', alice)
                 self.assertNotIn('8.0', alice)
                 self.assertIn('<td class="quality-total"', alice)
                 self.assertIn('th class="quality-total header"', html)
                 self.assertIn('>Code quality</th>', html)
+
+    def test_vietnamese_labels(self):
+        contest, cp = self.build('rq_vi')
+        self.submit(contest, cp, self.alice, 10, quality=4.0)
+        self.client.force_login(self.alice)
+        html = self.client.get(reverse('contest_ranking', args=[contest.key]), HTTP_ACCEPT_LANGUAGE='vi') \
+                          .content.decode()
+        self.assertIn('CLC 16.0', self.row(html, 'rq_alice'))
+        self.assertIn('>Chất lượng code</th>', html)
 
     def test_contestant_without_scores_gets_empty_quality_cells(self):
         contest, cp = self.build('rq_empty')
