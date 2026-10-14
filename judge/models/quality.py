@@ -35,6 +35,18 @@ class SubmissionQuality(models.Model):
             return submission.contest_object.enable_code_quality
         return submission.problem.enable_code_quality
 
+    @staticmethod
+    def is_visible_to(submission, user):
+        """Whether `user` may see this submission's score (assumes they can already see the submission).
+
+        Scores belong to accepted code: a rejudge to another verdict hides them until it is AC again.
+        Like checker feedback, contest scores stay hidden while the contest runs, except to its editors.
+        """
+        if submission.result != 'AC':
+            return False
+        contest = submission.contest_object
+        return contest is None or contest.ended or contest.is_editable_by(user)
+
     @property
     def total(self):
         return sum(getattr(self, dim) for dim in self.DIMENSIONS)
