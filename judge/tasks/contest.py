@@ -36,7 +36,7 @@ def rescore_contest(self, contest_key):
 @shared_task(bind=True)
 def run_moss(self, contest_key):
     moss_api_key = settings.MOSS_API_KEY
-    if moss_api_key is None:
+    if not moss_api_key:
         raise ImproperlyConfigured('No MOSS API Key supplied')
 
     contest = Contest.objects.get(key=contest_key)
