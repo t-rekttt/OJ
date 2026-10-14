@@ -38,6 +38,11 @@ def run_moss(self, contest_key):
     moss_api_key = settings.MOSS_API_KEY
     if not moss_api_key:
         raise ImproperlyConfigured('No MOSS API Key supplied')
+    # The MOSS protocol sends the key as a number (`moss %d`); from the environment it arrives as a string.
+    try:
+        moss_api_key = int(moss_api_key)
+    except (TypeError, ValueError):
+        raise ImproperlyConfigured('MOSS API Key must be a number (the MOSS user id)')
 
     contest = Contest.objects.get(key=contest_key)
     ContestMoss.objects.filter(contest=contest).delete()
