@@ -67,7 +67,7 @@
     {% endfor %}
     {% if show_quality %}
         <th class="quality-total header" title="{{ _('Average code quality, out of 20. Informational only; does not affect points or ranking.') }}">
-            {{- _('Quality') -}}
+            {{- pgettext('scoreboard column', 'Code quality') -}}
         </th>
     {% endif %}
     {% if has_rating %}

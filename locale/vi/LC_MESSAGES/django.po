@@ -7680,10 +7680,6 @@ msgid "Code quality (informational, does not affect points)"
 msgstr "Chất lượng mã (chỉ để tham khảo, không ảnh hưởng đến điểm)"
 
 #: judge/utils/quality_ranking.py
-msgid "Q"
-msgstr "CL"
-
-#: judge/utils/quality_ranking.py
 #, python-format
 msgid "Average code quality over %(count)d problem(s), out of 20"
 msgstr "Chất lượng mã trung bình trên %(count)d bài, thang điểm 20"
@@ -7693,5 +7689,15 @@ msgid "Average code quality, out of 20. Informational only; does not affect poin
 msgstr "Chất lượng mã trung bình, thang điểm 20. Chỉ để tham khảo; không ảnh hưởng đến điểm hay xếp hạng."
 
 #: templates/contest/ranking-table.html
-msgid "Quality"
-msgstr "Chất lượng"
+msgctxt "scoreboard column"
+msgid "Code quality"
+msgstr "Chất lượng code"
+
+#: templates/admin/judge/contest/change_form.html
+msgid "Rate code quality"
+msgstr "Chấm chất lượng code"
+
+#: judge/admin/contest.py
+#, python-format
+msgid "Rating code quality for %s..."
+msgstr "Đang chấm chất lượng code cho %s..."

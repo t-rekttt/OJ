@@ -1,4 +1,5 @@
 import re
+from unittest import mock
 
 from django.test import TestCase
 from django.urls import reverse
@@ -8,6 +9,7 @@ from judge.contest_format.registry import formats
 from judge.models import ContestParticipation, ContestProblem, ContestSubmission, Language, Submission, \
     SubmissionQuality, SubmissionTestCase
 from judge.models.tests.util import create_contest, create_problem, create_user
+from judge.tasks.quality import rate_contest_quality
 from judge.utils.code_quality import RUBRIC_VERSION
 
 
@@ -81,9 +83,11 @@ class ContestRankingQualityTestCase(TestCase):
                 alice = self.row(html, 'rq_alice')
                 self.assertIn('class="quality-score"', alice)
                 self.assertIn('16.0', alice)
-                self.assertNotIn('Q 8.0', alice)
+                self.assertIn('Code quality: 16.0', alice)
+                self.assertNotIn('8.0', alice)
                 self.assertIn('<td class="quality-total"', alice)
                 self.assertIn('th class="quality-total header"', html)
+                self.assertIn('>Code quality</th>', html)
 
     def test_contestant_without_scores_gets_empty_quality_cells(self):
         contest, cp = self.build('rq_empty')
@@ -116,3 +120,40 @@ class ContestRankingQualityTestCase(TestCase):
         self.submit(contest, cp, self.alice, 10, quality=4.0)
         self.assertNotIn('th class="quality-total', self.ranking(contest, self.alice))
         self.assertIn('th class="quality-total', self.ranking(contest, self.editor))
+
+
+class AdminRateCodeQualityTestCase(ContestRankingQualityTestCase):
+    """The admin "Rate code quality" button scores the latest accepted submission per contestant and problem."""
+
+    @mock.patch('judge.tasks.quality.score_submission_quality')
+    def test_queues_only_latest_unscored_accepted(self, task):
+        contest, cp = self.build('rq_rate')
+        self.submit(contest, cp, self.alice, 10)                       # superseded by the later AC
+        latest_alice = self.submit(contest, cp, self.alice, 20)
+        self.submit(contest, cp, self.alice, 30, result='WA')          # not accepted
+        self.submit(contest, cp, self.bob, 15, quality=3.0)            # latest, already scored
+        self.assertEqual(rate_contest_quality.apply(args=(contest.id,)).get(), 1)
+        task.delay.assert_called_once_with(latest_alice.id)
+
+    @mock.patch('judge.tasks.rate_contest_quality')
+    def test_admin_button_permissions(self, task):
+        task.delay.return_value.id = 'task-id'
+        contest, _cp = self.build('rq_rate_perm')
+        off, _cp = self.build('rq_rate_off', enable=False)
+        url = lambda c: reverse('admin:judge_contest_rate_code_quality', args=[c.id])  # noqa: E731
+
+        self.client.force_login(self.alice)          # not staff / cannot edit
+        self.assertNotEqual(self.client.get(url(contest)).status_code, 302)
+        task.delay.assert_not_called()
+
+        admin = create_user(username='rq_admin', is_staff=True, is_superuser=True)
+        self.client.force_login(admin)
+        self.assertEqual(self.client.get(url(off)).status_code, 404)
+        self.assertEqual(self.client.get(url(contest)).status_code, 302)
+        task.delay.assert_called_once_with(contest.id)
+
+        # The button is the link to this contest's rate URL (the class name also appears in the page script).
+        page = self.client.get(reverse('admin:judge_contest_change', args=[contest.id])).content.decode()
+        self.assertIn('href="%s"' % url(contest), page)
+        off_page = self.client.get(reverse('admin:judge_contest_change', args=[off.id])).content.decode()
+        self.assertNotIn('href="%s"' % url(off), off_page)

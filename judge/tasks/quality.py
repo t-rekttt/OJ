@@ -9,7 +9,7 @@ from judge.models import Submission, SubmissionQuality
 from judge.utils.celery import Progress
 from judge.utils.code_quality import CodeQualityError, RUBRIC_VERSION, score_source, source_hash
 
-__all__ = ('score_contest_quality', 'score_problem_quality', 'score_submission_quality')
+__all__ = ('rate_contest_quality', 'score_contest_quality', 'score_problem_quality', 'score_submission_quality')
 
 logger = logging.getLogger('judge.code_quality')
 
@@ -117,3 +117,24 @@ def score_problem_quality(self, problem_id):
 def score_contest_quality(self, contest_id):
     """Backfill every accepted submission made in a contest."""
     return _queue_unscored(self, Submission.objects.filter(contest_object_id=contest_id))
+
+
+@shared_task(bind=True)
+def rate_contest_quality(self, contest_id):
+    """Score each contestant's latest accepted submission per problem: the ones the scoreboard shows."""
+    latest = {}
+    for submission_id, participation_id, problem_id in Submission.objects.filter(
+            contest_object_id=contest_id, result='AC',
+    ).order_by('date').values_list('id', 'contest__participation_id', 'contest__problem_id'):
+        latest[(participation_id, problem_id)] = submission_id
+    already_scored = set(SubmissionQuality.objects.filter(
+        submission_id__in=latest.values(), rubric_version=RUBRIC_VERSION,
+    ).values_list('submission_id', flat=True))
+    queued = 0
+    with Progress(self, len(latest)) as p:
+        for submission_id in latest.values():
+            if submission_id not in already_scored:
+                score_submission_quality.delay(submission_id)
+                queued += 1
+            p.did(1)
+    return queued

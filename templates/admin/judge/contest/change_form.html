@@ -4,7 +4,7 @@
 {% block extrahead %}{{ block.super }}
     <script>
         django.jQuery(function ($) {
-            $('.rerate-link').appendTo('div#bottombar').show();
+            $('.rerate-link, .rate-code-quality-link').appendTo('div#bottombar').show();
             $('.rejudge-link').click(function () {
                 return confirm('{{ _('Are you sure you want to rejudge ALL the submissions?') }}');
             });
@@ -24,6 +24,13 @@
            class="button rerate-link">
             <i class="fa fa-lg fa-signal"></i>
             <span class="text">{% trans "Rate" %}</span>
+        </a>
+    {% endif %}
+    {% if original and original.enable_code_quality %}
+        <a style="display: none" title="{% trans "Rate code quality" %}"
+           href="{% url 'admin:judge_contest_rate_code_quality' original.pk %}" class="button rate-code-quality-link">
+            <i class="fa fa-lg fa-code"></i>
+            <span class="text">{% trans "Rate code quality" %}</span>
         </a>
     {% endif %}
 {% endblock %}

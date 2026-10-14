@@ -15,6 +15,7 @@ from reversion.admin import VersionAdmin
 from django_ace import AceWidget
 from judge.models import Contest, ContestAnnouncement, ContestProblem, ContestSubmission, Profile, Rating, Submission
 from judge.ratings import rate_contest
+from judge.utils.celery import redirect_to_task_status
 from judge.utils.views import NoBatchDeleteMixin
 from judge.widgets import AdminHeavySelect2MultipleWidget, AdminHeavySelect2Widget, AdminMartorWidget, \
     AdminSelect2MultipleWidget, AdminSelect2Widget
@@ -289,6 +290,7 @@ class ContestAdmin(NoBatchDeleteMixin, VersionAdmin):
         return [
             path('rate/all/', self.rate_all_view, name='judge_contest_rate_all'),
             path('<int:id>/rate/', self.rate_view, name='judge_contest_rate'),
+            path('<int:id>/rate_code_quality/', self.rate_code_quality_view, name='judge_contest_rate_code_quality'),
             path('<int:contest_id>/rejudge/<int:problem_id>/', self.rejudge_view, name='judge_contest_rejudge'),
             path('<int:contest_id>/rescore/<int:problem_id>/', self.rescore_view, name='judge_contest_rescore'),
             path('<int:contest_id>/resend/<int:announcement_id>/', self.resend_view, name='judge_contest_resend'),
@@ -339,6 +341,19 @@ class ContestAdmin(NoBatchDeleteMixin, VersionAdmin):
         with transaction.atomic():
             contest.rate()
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', reverse('admin:judge_contest_changelist')))
+
+    def rate_code_quality_view(self, request, id):
+        contest = get_object_or_404(Contest, id=id)
+        if not self.has_change_permission(request, contest):
+            raise PermissionDenied()
+        if not contest.enable_code_quality:
+            raise Http404()
+        from judge.tasks import rate_contest_quality
+        status = rate_contest_quality.delay(contest.id)
+        return redirect_to_task_status(
+            status, message=_('Rating code quality for %s...') % (contest.name,),
+            redirect=reverse('admin:judge_contest_change', args=(contest.id,)),
+        )
 
     def get_form(self, request, obj=None, **kwargs):
         form = super(ContestAdmin, self).get_form(request, obj, **kwargs)
