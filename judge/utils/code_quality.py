@@ -71,8 +71,17 @@ class CodeQualityError(Exception):
     pass
 
 
+def normalize_source(source):
+    """Drop whitespace that cannot change a score, so trivial resubmissions share one cached result.
+
+    Line endings, trailing spaces/tabs and blank lines at either end are ignored; indentation is kept.
+    """
+    lines = source.replace('\r\n', '\n').replace('\r', '\n').split('\n')
+    return '\n'.join(line.rstrip() for line in lines).strip('\n')
+
+
 def source_hash(source):
-    return hashlib.sha256(source.encode('utf-8')).hexdigest()
+    return hashlib.sha256(normalize_source(source).encode('utf-8')).hexdigest()
 
 
 def _bounded(value, low, high):

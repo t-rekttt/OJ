@@ -7,7 +7,8 @@ from django.test import TestCase, override_settings
 from judge.models import Language, Problem, Submission, SubmissionQuality, SubmissionSource, SubmissionTestCase
 from judge.models.tests.util import create_problem, create_user
 from judge.tasks.quality import score_problem_quality, score_submission_quality
-from judge.utils.code_quality import CodeQualityError, QUESTIONS, RUBRIC_VERSION, score_source, source_hash
+from judge.utils.code_quality import CodeQualityError, QUESTIONS, RUBRIC_VERSION, normalize_source, score_source, \
+    source_hash
 
 SOURCE = 'n = int(input())\nprint(n * 2)\n'
 
@@ -59,6 +60,10 @@ class ScoreSourceTestCase(TestCase):
         post.return_value = jev_response()
         post.return_value.json.return_value['usage'] = None
         self.assertEqual(score_source(SOURCE, 'Python 3')['cost'], 0.0)
+
+    def test_normalize_source_keeps_meaningful_whitespace(self):
+        self.assertEqual(normalize_source('a  \r\n\r\n    b\t\r\n\n'), 'a\n\n    b')
+        self.assertNotEqual(normalize_source('if x:\n    y'), normalize_source('if x:\ny'))
 
     @mock.patch('judge.utils.code_quality.requests.post', side_effect=requests.ConnectionError('secret source'))
     def test_error_message_does_not_leak_details(self, post):
@@ -133,11 +138,34 @@ class ScoreSubmissionQualityTaskTestCase(TestCase):
         post.assert_not_called()
 
     @mock.patch('judge.utils.code_quality.requests.post', return_value=jev_response())
-    def test_concurrent_scoring_calls_api_once(self, post):
-        submission = self.make_submission()
-        cache.add('code_quality_lock:%d' % submission.id, 1, 60)
-        self.assertEqual(score_submission_quality(submission.id), 'in-progress')
+    def test_same_code_in_flight_waits_then_reuses(self, post):
+        first, second = self.make_submission(), self.make_submission()
+        cache.add('code_quality_lock:%s' % source_hash(SOURCE), 1, 60)
+        with mock.patch.object(score_submission_quality, 'retry', side_effect=RuntimeError('retry')) as retry:
+            with self.assertRaises(RuntimeError):
+                score_submission_quality(second.id)
+        retry.assert_called_once()
         post.assert_not_called()
+
+        # The first task finishes and releases the lock; the retried task then reuses its result.
+        cache.delete('code_quality_lock:%s' % source_hash(SOURCE))
+        self.assertEqual(score_submission_quality(first.id), 'scored')
+        self.assertEqual(score_submission_quality(second.id), 'reused')
+        self.assertEqual(post.call_count, 1)
+
+    @mock.patch('judge.utils.code_quality.requests.post', return_value=jev_response())
+    def test_whitespace_only_resubmission_reuses_scores(self, post):
+        score_submission_quality(self.make_submission().id)
+        for variant in (SOURCE.replace('\n', '\r\n'), SOURCE.replace('\n', '  \n'), '\n' + SOURCE + '\n\n'):
+            self.assertEqual(score_submission_quality(self.make_submission(source=variant).id), 'reused')
+        self.assertEqual(post.call_count, 1)
+
+    @mock.patch('judge.utils.code_quality.requests.post', return_value=jev_response())
+    def test_indentation_change_is_scored_again(self, post):
+        score_submission_quality(self.make_submission().id)
+        reindented = SOURCE.replace('print', '    print')
+        self.assertEqual(score_submission_quality(self.make_submission(source=reindented).id), 'scored')
+        self.assertEqual(post.call_count, 2)
 
     @mock.patch('judge.utils.code_quality.requests.post', side_effect=requests.Timeout())
     def test_api_failure_retries_and_leaves_submission_untouched(self, post):

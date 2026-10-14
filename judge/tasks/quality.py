@@ -75,10 +75,11 @@ def score_submission_quality(self, submission_id):
         logger.warning('Code quality budget reached; skipping submission %d', submission_id)
         return 'over-budget'
 
-    # Bridge and backfill can queue the same submission; only one of them calls the API.
-    lock_key = 'code_quality_lock:%d' % submission_id
+    # Lock on the code, not the submission: the same code submitted several times in quick succession
+    # (or queued by both the bridge and a backfill) calls the API once; the other tasks retry and reuse it.
+    lock_key = 'code_quality_lock:%s' % digest
     if not cache.add(lock_key, 1, settings.CODE_QUALITY_JEV_TIMEOUT * 2 + 30):
-        return 'in-progress'
+        raise self.retry(countdown=settings.CODE_QUALITY_JEV_TIMEOUT + 5, max_retries=5)
     try:
         result = score_source(source, submission.language.name)
     except CodeQualityError as e:
